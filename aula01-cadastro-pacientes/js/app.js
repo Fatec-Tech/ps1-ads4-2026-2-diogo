@@ -10,6 +10,26 @@ function adicionarPaciente(nome, email, nascimento, telefone) {
 	const novoPaciente = { nome, email, nascimento, telefone };
 	pacientes.push(novoPaciente);
 }
+/* Função para calcular a idade da pessoa
+function calcularIdade (nascimento){
+	DataAtual = new Date();
+	nascimento = new Date();
+
+	const anoAtu = DataAtual.getFullYear();
+	const mesAtu = DataAtual.getMonth();
+	const diaAtu = DataAtual.getDate();
+
+	const anoNasc = nascimento.getFullYear();
+	const mesNasc = nascimento.getMonth();
+	const diaNasc = nascimento.getDate();
+
+	const Idade = DataAtual - new Date(nascimento);
+	
+	if  ((mesAtu < mesNasc) || (mesAtu == mesNasc && diaAtu < diaNasc) ) 
+    Idade = Idade - 1;
+
+	return(Idade);
+}*/
 
 // Função responsável por desenhar a tabela inteira a partir do array
 function renderizarTabela() {
