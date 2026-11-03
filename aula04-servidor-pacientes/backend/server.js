@@ -32,8 +32,78 @@ app.get('/pacientes/:id', (req, res) => {
   res.json(paciente);
 });
 
-const PORTA = 3000;
+// CREATE - Cadastrar paciente
+app.post('/pacientes', (req, res) => {
+  const { nome, email, nascimento } = req.body;
+
+  if (!nome || !email || !nascimento) {
+    return res.status(400).json({ erro: 'Preencha todos os campos' });
+  }
+
+  const novoPaciente = {
+    id: proximoId++,
+    nome,
+    email,
+    nascimento
+  };
+
+  pacientes.push(novoPaciente);
+
+  res.status(201).json(novoPaciente);
+});
+
+// UPDATE - Atualizar paciente
+app.put('/pacientes/:id', (req, res) => {
+  const id = Number(req.params.id);
+
+  if (!Number.isInteger(id) || id <= 0) {
+    return res.status(400).json({ erro: 'ID inválido' });
+  }
+
+  const indice = pacientes.findIndex((p) => p.id === id);
+
+  if (indice === -1) {
+    return res.status(404).json({ erro: 'Paciente não encontrado' });
+  }
+
+  const { nome, email, nascimento } = req.body;
+
+  if (!nome || !email || !nascimento) {
+    return res.status(400).json({ erro: 'Preencha todos os campos' });
+  }
+
+  pacientes[indice] = {
+    id,
+    nome,
+    email,
+    nascimento
+  };
+
+  res.json(pacientes[indice]);
+});
+
+// DELETE - Excluir paciente
+app.delete('/pacientes/:id', (req, res) => {
+  const id = Number(req.params.id);
+
+  if (!Number.isInteger(id) || id <= 0) {
+    return res.status(400).json({ erro: 'ID inválido' });
+  }
+
+  const indice = pacientes.findIndex((p) => p.id === id);
+
+  if (indice === -1) {
+    return res.status(404).json({ erro: 'Paciente não encontrado' });
+  }
+
+  pacientes.splice(indice, 1);
+
+  res.status(204).end();
+});
+
+// Inicialização do servidor
+const PORTA = process.env.PORT || 3000;
 
 app.listen(PORTA, () => {
-	console.log(`Servidor rodando em http://localhost:${PORTA}`);
+    console.log(`Servidor rodando na porta ${PORTA}`);
 });

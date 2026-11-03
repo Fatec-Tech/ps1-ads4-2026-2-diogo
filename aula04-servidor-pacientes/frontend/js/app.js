@@ -1,71 +1,201 @@
+
 const URL_API = 'http://localhost:3000/pacientes';
-const pacientes = [];
+
+let pacientes = [];
+let pacienteEditando = null;
 
 const formulario = document.getElementById('form-paciente');
 const tabela = document.getElementById('tabela-pacientes');
 const mensagemCarregando = document.getElementById('carregando');
 
-function adicionarPaciente(nome, email, nascimento) {
-	pacientes.push({ nome, email, nascimento });
-}
+const campoNome = document.getElementById('nome');
+const campoEmail = document.getElementById('email');
+const campoNascimento = document.getElementById('nascimento');
 
-function renderizarTabela() {
-	tabela.innerHTML = '';
+const botaoSubmit = document.getElementById('btn-submit');
+const botaoCancelar = document.getElementById('btn-cancelar');
 
-	pacientes.forEach((paciente) => {
-		const linha = document.createElement('tr');
-		linha.innerHTML = `
-      <td>${paciente.nome}</td>
-      <td>${paciente.email}</td>
-      <td>${formatarData(paciente.nascimento)}</td>
-    `;
-		tabela.appendChild(linha);
-	});
-}
-
+// Formata a data para exibição
 function formatarData(dataISO) {
-	const [ano, mes, dia] = dataISO.split('-');
-	return `${dia}/${mes}/${ano}`;
+    const [ano, mes, dia] = dataISO.split('-');
+    return `${dia}/${mes}/${ano}`;
 }
 
-// Nova função: busca os pacientes iniciais a partir do arquivo JSON
-async function carregarPacientesIniciais() {
-	try {
-		const resposta = await fetch(URL_API); // única linha que muda de verdade
+// Carrega os pacientes do backend
+async function carregarPacientes() {
+    mensagemCarregando.style.display = 'block';
+    mensagemCarregando.textContent = 'Carregando pacientes...';
 
-		if (!resposta.ok) {
-			throw new Error(`Erro HTTP: ${resposta.status}`);
-		}
+    try {
+        const resposta = await fetch(URL_API);
 
-		const dados = await resposta.json();
+        if (!resposta.ok) {
+            throw new Error('Erro ao carregar pacientes');
+        }
 
-		dados.forEach((paciente) => {
-			adicionarPaciente(paciente.nome, paciente.email, paciente.nascimento);
-		});
+        pacientes = await resposta.json();
 
-		renderizarTabela();
-	} catch (erro) {
-		console.error('Não foi possível carregar os pacientes:', erro);
-		mensagemCarregando.textContent =
-			'Erro ao carregar pacientes. O servidor está rodando?';
-		return;
-	}
+        renderizarTabela();
 
-	mensagemCarregando.style.display = 'none';
+        mensagemCarregando.style.display = 'none';
+
+    } catch (erro) {
+        console.error(erro);
+        mensagemCarregando.textContent =
+            'Erro ao carregar pacientes. Verifique o servidor.';
+    }
 }
 
-formulario.addEventListener('submit', (event) => {
-	event.preventDefault();
+// Renderiza os pacientes na tabela
+function renderizarTabela() {
+    tabela.innerHTML = '';
 
-	const nome = document.getElementById('nome').value;
-	const email = document.getElementById('email').value;
-	const nascimento = document.getElementById('nascimento').value;
+    pacientes.forEach((paciente) => {
+        const linha = document.createElement('tr');
 
-	adicionarPaciente(nome, email, nascimento);
-	renderizarTabela();
+        const colunaNome = document.createElement('td');
+        colunaNome.textContent = paciente.nome;
 
-	formulario.reset();
+        const colunaEmail = document.createElement('td');
+        colunaEmail.textContent = paciente.email;
+
+        const colunaNascimento = document.createElement('td');
+        colunaNascimento.textContent =
+            formatarData(paciente.nascimento);
+
+        const colunaAcoes = document.createElement('td');
+
+        // Botão Editar
+        const botaoEditar = document.createElement('button');
+        botaoEditar.textContent = 'Editar';
+        botaoEditar.className = 'btn btn-warning btn-sm me-2';
+
+        botaoEditar.addEventListener('click', () => {
+            editarPaciente(paciente);
+        });
+
+        // Botão Excluir
+        const botaoExcluir = document.createElement('button');
+        botaoExcluir.textContent = 'Excluir';
+        botaoExcluir.className = 'btn btn-danger btn-sm';
+
+        botaoExcluir.addEventListener('click', () => {
+            excluirPaciente(paciente.id);
+        });
+
+        colunaAcoes.appendChild(botaoEditar);
+        colunaAcoes.appendChild(botaoExcluir);
+
+        linha.appendChild(colunaNome);
+        linha.appendChild(colunaEmail);
+        linha.appendChild(colunaNascimento);
+        linha.appendChild(colunaAcoes);
+
+        tabela.appendChild(linha);
+    });
+}
+
+// Cadastrar ou atualizar paciente
+formulario.addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    const paciente = {
+        nome: campoNome.value,
+        email: campoEmail.value,
+        nascimento: campoNascimento.value
+    };
+
+    try {
+        let resposta;
+
+        if (pacienteEditando === null) {
+            // CREATE - POST
+            resposta = await fetch(URL_API, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(paciente)
+            });
+
+        } else {
+            // UPDATE - PUT
+            resposta = await fetch(`${URL_API}/${pacienteEditando}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(paciente)
+            });
+        }
+
+        if (!resposta.ok) {
+            const erro = await resposta.json();
+            throw new Error(erro.erro || 'Erro ao salvar paciente');
+        }
+
+        formulario.reset();
+        cancelarEdicao();
+
+        await carregarPacientes();
+
+    } catch (erro) {
+        alert(erro.message);
+        console.error(erro);
+    }
 });
 
-// Assim que o script carrega, já dispara a busca dos dados iniciais
-carregarPacientesIniciais();
+// Preenche o formulário para edição
+function editarPaciente(paciente) {
+    pacienteEditando = paciente.id;
+
+    campoNome.value = paciente.nome;
+    campoEmail.value = paciente.email;
+    campoNascimento.value = paciente.nascimento;
+
+    botaoSubmit.textContent = 'Salvar alterações';
+    botaoCancelar.classList.remove('d-none');
+
+    campoNome.focus();
+}
+
+// Cancela o modo de edição
+function cancelarEdicao() {
+    pacienteEditando = null;
+
+    formulario.reset();
+
+    botaoSubmit.textContent = 'Cadastrar';
+    botaoCancelar.classList.add('d-none');
+}
+
+// Botão cancelar
+botaoCancelar.addEventListener('click', cancelarEdicao);
+
+// Excluir paciente
+async function excluirPaciente(id) {
+    const confirmar = confirm('Deseja realmente excluir este paciente?');
+
+    if (!confirmar) {
+        return;
+    }
+
+    try {
+        const resposta = await fetch(`${URL_API}/${id}`, {
+            method: 'DELETE'
+        });
+
+        if (!resposta.ok) {
+            throw new Error('Erro ao excluir paciente');
+        }
+
+        await carregarPacientes();
+
+    } catch (erro) {
+        alert(erro.message);
+        console.error(erro);
+    }
+}
+
+// Inicia o carregamento dos pacientes
+carregarPacientes();

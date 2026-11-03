@@ -33,7 +33,13 @@
       </div>
 
       <div class="col-md-1 d-flex align-items-end">
-        <button type="submit" class="btn btn-primary w-100">+</button>
+        <button type="submit" id="btn-submit" class="btn btn-primary w-100">
+             Cadastrar
+          </button>
+
+        <button type="button" id="btn-cancelar" class="btn btn-secondary d-none">
+             Cancelar
+          </button>
       </div>
     </form>
 
@@ -48,6 +54,7 @@
           <th>Nome</th>
           <th>E-mail</th>
           <th>Data de nascimento</th>
+          <th>Ações</th>
         </tr>
       </thead>
       <tbody id="tabela-pacientes"></tbody>
