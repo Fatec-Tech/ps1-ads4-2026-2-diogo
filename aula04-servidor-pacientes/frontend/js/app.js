@@ -1,5 +1,5 @@
 
-const URL_API = 'http://localhost:3000/pacientes';
+const URL_API = 'https://api-clinica-diogo-iori.onrender.com/pacientes';
 
 let pacientes = [];
 let pacienteEditando = null;
